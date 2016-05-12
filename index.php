@@ -2,9 +2,9 @@
 
 /*
 Программа: поиск пути
-Версия:2.0
+Версия:3.0
 На данном этапе программа:
-	-ищет все возможные пути из точки A в B
+	-ищет самый короткий путь из точки A в B
 	-показывает время достижения пути
 */
 error_reporting(-1);
@@ -168,6 +168,7 @@ function find_way($paths,$from,$where,$time,$way){
 		$arrPrep['way']=$way;
 		$arrPrep['time']=$time;
 		$GLOBALS['ways'][]=$arrPrep;
+		
 	}
 	else{
 		foreach ($paths[$current] as $k=>$v){
@@ -198,9 +199,22 @@ function find_way($paths,$from,$where,$time,$way){
 }
 
 ////////////////////////////////////
-$ways=find_way($paths,'pet','teh',0,null);
-echo "Способы достижения цели: \n";
-var_dump($ways);
-foreach($ways as $k=>$v){
-	echo implode("=>",$ways[$k]['way'])." Время: ".$ways[$k]['time']."\n";
+function find_shortest_way($paths,$from,$where,$time,$way){
+	$ways=find_way($paths,$from,$where,$time,$way);
+
+	$shortest['time']=0;
+	$shortest['way']='';
+	
+	foreach($ways as $k=>$v){
+		if (($shortest['time']>$ways[$k]['time'])||($shortest['time']==0)){
+			$shortest['time']=$ways[$k]['time'];
+			$shortest['way']=$ways[$k]['way'];
+		}		
+	}
+
+	return $shortest;
 }
+////////////////////////////////////
+$ways=find_shortest_way($paths,'pet','teh',0,null);
+echo "Способы достижения цели: ";
+echo implode("=>",$ways['way'])." Время: ".$ways['time']."\n";
