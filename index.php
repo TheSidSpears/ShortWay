@@ -2,10 +2,24 @@
 
 /*
 Программа: поиск пути
-Версия:3.0
+Версия:5.0
 На данном этапе программа:
 	-ищет самый короткий путь из точки A в B
 	-показывает время достижения пути
+	-показывает способ достижения пути
+		-показывает, на чём добираться
+		-сколько времени это займёт
+		
+		
+Todo:
+-возможно, сделать для метро
+	-изменить структуру кода (что-бы путь Медведково=>Проспект Мира не показывал все промежуточные станции)
+	-долго вбивать все станции (взять в Яндексе или найти где-нибудь еще)
+	-можно сделать 2-3 ветки и не париться
+	
+-сделать web-интерфейс с приложенной картой (http://vk.cc/55nguY) и формой
+-немного современного дизайна
+	
 */
 error_reporting(-1);
 
@@ -14,9 +28,9 @@ define('FOOT', 'foot');
 define('BUS', 'bus');
 
 $transportName = array(
-    SUBWAY  =>  'едешь на метро',
-    FOOT    =>  'идешь пешком',
-    BUS     =>  'едешь на автобусе'
+    SUBWAY  =>  'на метро',
+    FOOT    =>  'пешком',
+    BUS     =>  'на автобусе'
 );
 
 $pointNames = array(
@@ -139,18 +153,15 @@ $paths = array(
 function canGet($time, $byWhat) {
     return array('time'     =>  $time, 'by' =>  $byWhat);
 }
+
 function find_way($paths,$from,$where,$time,$way){
 
 	if (!is_array($way)){
 		$way=array();
 		$way[]=$from;
 	}
-	
-	echo "\n\n\nФУНКЦИЯ(".$from.";".$where."; ".implode("=>",$way).")\n";
 
 	$current=$way[count($way)-1]; //на какой мы сейчас станции
-	
-	echo "Текущая станция: ".$current."\n";
 	
 	//Считаем время
 	if (count($way)>1){
@@ -161,35 +172,19 @@ function find_way($paths,$from,$where,$time,$way){
 	
 	if(array_key_exists($where,$paths[$current])){
 		$way[]=$where;
-
 		$time+=$paths[$current][$where]['time']; //Время текущей с следующей (,которая цель)
-		
-		echo "		ОДИН ИЗ ПУТЕЙ: ".implode("=>",$way)." Время: ".$time."\n";
+
 		$arrPrep['way']=$way;
 		$arrPrep['time']=$time;
-		$GLOBALS['ways'][]=$arrPrep;
-		
+		$GLOBALS['ways'][]=$arrPrep;//Добавляем вариант прохода в возвращаемый функцией массив
 	}
 	else{
 		foreach ($paths[$current] as $k=>$v){
 			$next=$k;
 			if(!in_array($next,$way)){
-				echo "Станции ".$next." нет в пути ".implode("=>",$way)."\n";
-
-				echo "	Вот какие у станции ".$next." выходы: ";		
-				//---implode для ключей
-				$stringImplode='';
-				foreach($paths[$next] as $key=>$val)
-					$stringImplode.=$key.", ";
-				echo $stringImplode."\n";;
-				//---
-
 				$way[]=$next;
 				find_way($paths,$from,$where,$time,$way);
 				array_pop($way);
-			}
-			else{
-				echo "Станция ".$next." уже есть в пути ".implode("=>",$way).";\n";
 			}
 
 		}
@@ -215,6 +210,28 @@ function find_shortest_way($paths,$from,$where,$time,$way){
 	return $shortest;
 }
 ////////////////////////////////////
-$ways=find_shortest_way($paths,'pet','teh',0,null);
-echo "Способы достижения цели: ";
-echo implode("=>",$ways['way'])." Время: ".$ways['time']."\n";
+function show_shortest_way($paths,$from,$where,$time,$way,$pointNames,$transportName){
+	$ways=find_shortest_way($paths,$from,$where,$time,$way);
+	
+	$first=$pointNames[reset($ways['way'])];
+	$last=$pointNames[end($ways['way'])];
+	
+	echo "Как доехать из ".$first." в ".$last." за ".$ways['time']." минут\n";
+	
+	for($i=0;$i<count($ways['way']);$i++){
+		$current=$ways['way'][$i];
+		
+		
+		if ($i<(count($ways['way'])-1)){
+			$next=$ways['way'][$i+1];
+			echo "".$pointNames[$current]."\n	=>";
+			echo $transportName[$paths[$current][$next]['by']]. "";
+			echo " за ".$paths[$current][$next]['time']." минут\n";
+		}
+		else
+			echo $pointNames[$current]."\n\n";
+	}
+}
+////////////////////////////////////
+show_shortest_way($paths,'pet','teh',0,null,$pointNames,$transportName);
+show_shortest_way($paths,'vas','let',0,null,$pointNames,$transportName);
