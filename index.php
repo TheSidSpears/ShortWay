@@ -2,11 +2,11 @@
 
 /*
 Программа: поиск пути
-Версия:1.0
-На данном этапе программа ищет все возможные пути из точки A в B
+Версия:2.0
+На данном этапе программа:
+	-ищет все возможные пути из точки A в B
+	-показывает время достижения пути
 */
-
-
 error_reporting(-1);
 
 define('SUBWAY', 'sub');
@@ -19,12 +19,24 @@ $transportName = array(
     BUS     =>  'едешь на автобусе'
 );
 
-/* Чтобы не писать много раз array('time' => ..., 'by' => ...), используем функцию. 
-    «canGet» переводится как «можно попасть» */
-function canGet($time, $byWhat) {
-    return array('time'     =>  $time, 'by' =>  $byWhat);
-}
-function find_way($from,$where,$way){
+$pointNames = array(
+    'pet'   =>  'ст. м. Петроградская',
+    'chk'   =>  'ст. м. Чкаловская',
+    'gor'   =>  'ст. м. Горьковская',
+    'spo'   =>  'ст. м. Спортивная',
+    'vas'   =>  'ст. м. Василеостровская',
+    'kre'   =>  'Петропавловская крепость',
+    'let'   =>  'Летний сад',
+    'dvo'   =>  'Дворцовая площадь',
+    'isa'   =>  'Исакиевский собор',
+    'nov'   =>  'Новая Голландия',
+    'ras'   =>  'Дом Раскольникова',
+    'gos'   =>  'Гостиный Двор',
+    'sen'   =>  'Сенная Площадь',
+    'vla'   =>  'ст. м. Владимирская',
+    'vit'   =>  'Витебский вокзал',
+    'teh'   =>  'Технологический Институт'
+);
 
 $paths = array(
     'pet'   =>  array(
@@ -121,6 +133,14 @@ $paths = array(
         'vit'   =>  canGet(2, SUBWAY)        
     )
 );
+
+/* Чтобы не писать много раз array('time' => ..., 'by' => ...), используем функцию. 
+    «canGet» переводится как «можно попасть» */
+function canGet($time, $byWhat) {
+    return array('time'     =>  $time, 'by' =>  $byWhat);
+}
+function find_way($paths,$from,$where,$time,$way){
+
 	if (!is_array($way)){
 		$way=array();
 		$way[]=$from;
@@ -128,20 +148,33 @@ $paths = array(
 	
 	echo "\n\n\nФУНКЦИЯ(".$from.";".$where."; ".implode("=>",$way).")\n";
 
-
 	$current=$way[count($way)-1]; //на какой мы сейчас станции
+	
 	echo "Текущая станция: ".$current."\n";
+	
+	//Считаем время
+	if (count($way)>1){
+		$prev=$way[count($way)-2]; //Предыдущая станция(для времени)
+		$time+=$paths[$prev][$current]['time'];
+	}
+
 	
 	if(array_key_exists($where,$paths[$current])){
 		$way[]=$where;
-		echo "		ОДИН ИЗ ПУТЕЙ: ".implode("=>",$way)."\n";
-		$GLOBALS['ways'][]=$way; //Добавляем вариант прохода в возвращаемый функцией массив
+
+		$time+=$paths[$current][$where]['time']; //Время текущей с следующей (,которая цель)
+		
+		echo "		ОДИН ИЗ ПУТЕЙ: ".implode("=>",$way)." Время: ".$time."\n";
+		$arrPrep['way']=$way;
+		$arrPrep['time']=$time;
+		$GLOBALS['ways'][]=$arrPrep;
 	}
 	else{
 		foreach ($paths[$current] as $k=>$v){
 			$next=$k;
 			if(!in_array($next,$way)){
 				echo "Станции ".$next." нет в пути ".implode("=>",$way)."\n";
+
 				echo "	Вот какие у станции ".$next." выходы: ";		
 				//---implode для ключей
 				$stringImplode='';
@@ -151,7 +184,7 @@ $paths = array(
 				//---
 
 				$way[]=$next;
-				find_way($from,$where,$way);
+				find_way($paths,$from,$where,$time,$way);
 				array_pop($way);
 			}
 			else{
@@ -165,9 +198,9 @@ $paths = array(
 }
 
 ////////////////////////////////////
-$ways=find_way('pet','spo',null);
+$ways=find_way($paths,'pet','teh',0,null);
 echo "Способы достижения цели: \n";
-
+var_dump($ways);
 foreach($ways as $k=>$v){
-	echo implode("=>",$ways[$k]).";\n";
+	echo implode("=>",$ways[$k]['way'])." Время: ".$ways[$k]['time']."\n";
 }
